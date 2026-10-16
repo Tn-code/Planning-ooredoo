@@ -1,21 +1,25 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   CalendarPlus,
   Wand2,
   History as HistoryIcon,
-  Users,
   LogOut,
   X,
+  Users as UsersIcon,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import OoredooLogo from "./OoredooLogo";
+import { useAuth } from "../hooks/useAuth";
+import { ROLES } from "../utils/roles";
 
 const OOREDOO = { red: "#ED1C24", redDark: "#B8141A" };
 
 export default function Sidebar({ open, onClose }) {
   const navigate = useNavigate();
+  const { role } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -32,15 +36,17 @@ export default function Sidebar({ open, onClose }) {
 
   const links = [
     { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Tableau de bord" },
+    ...(role === ROLES.ADMIN
+      ? [{ to: "/users", icon: <UsersIcon size={20} />, label: "Utilisateurs" }]
+      : []),
     { to: "/planning/manual", icon: <CalendarPlus size={20} />, label: "Planning manuel" },
     { to: "/planning/auto", icon: <Wand2 size={20} />, label: "Planning auto" },
     { to: "/history", icon: <HistoryIcon size={20} />, label: "Historique" },
-    { to: "/employees", icon: <Users size={20} />, label: "Employés" },
+    { to: "/employees", icon: <UsersIcon size={20} />, label: "Employés" },
   ];
 
   return (
     <>
-      {/* Overlay mobile */}
       {isMobile && open && (
         <div
           onClick={onClose}
@@ -76,54 +82,22 @@ export default function Sidebar({ open, onClose }) {
           overflowY: "auto",
         }}
       >
-        {/* Header logo */}
+        {/* Logo */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 12,
             padding: "0 8px 24px",
             borderBottom: "1px solid rgba(255,255,255,0.08)",
             marginBottom: 20,
           }}
         >
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: `linear-gradient(135deg, ${OOREDOO.red}, ${OOREDOO.redDark})`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: `0 8px 20px ${OOREDOO.red}66`,
-              flexShrink: 0,
-            }}
-          >
-            <svg width="22" height="22" viewBox="0 0 22 22">
-              <circle cx="6.5" cy="6.5" r="3" fill="#fff" />
-              <circle cx="15.5" cy="6.5" r="3" fill="#fff" />
-              <circle cx="6.5" cy="15.5" r="3" fill="#fff" />
-              <circle cx="15.5" cy="15.5" r="3" fill="#fff" />
-            </svg>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ color: "#FFFFFF", fontWeight: 800, fontSize: 15 }}>Ooredoo</div>
-            <div
-              style={{
-                color: OOREDOO.red,
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.15em",
-              }}
-            >
-              PLANNING
-            </div>
-          </div>
+          <OoredooLogo size={40} showText={true} />
           {isMobile && (
             <button
               onClick={onClose}
               style={{
+                marginLeft: "auto",
                 background: "rgba(255,255,255,0.08)",
                 border: "none",
                 color: "#fff",
@@ -151,7 +125,7 @@ export default function Sidebar({ open, onClose }) {
                 gap: 12,
                 padding: "12px 14px",
                 borderRadius: 10,
-                color: isActive ? "#FFFFFF" : "rgba(255,255,255,0.6)",
+                color: isActive ? "#fff" : "rgba(255,255,255,0.6)",
                 background: isActive
                   ? `linear-gradient(90deg, ${OOREDOO.red}33, transparent)`
                   : "transparent",
@@ -170,6 +144,7 @@ export default function Sidebar({ open, onClose }) {
           ))}
         </nav>
 
+        {/* Logout */}
         <button
           onClick={handleLogout}
           style={{
