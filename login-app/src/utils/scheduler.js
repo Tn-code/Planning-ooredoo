@@ -136,7 +136,37 @@ export function generatePlanning(employees, startDate = new Date(), options = {}
   const restAssignments = {};
   const employeesWithRest = new Set();
 
-  // 1) Samedi repos (exclut responsables)
+  // 1) 🔄 ROTATION des repos pour les Responsables (lundi → dimanche)
+  //    Chaque semaine, MARWA repose un jour différent
+  DYNAMIC_FORCED_G1.forEach((resp, idx) => {
+    if ((conges[resp] || []).length > 0) return;
+
+    // Rotation : semaine N → jour ((weekNum + idx) % 7)
+    // weekNum élevé → on modulo 7 pour avoir un jour entre 0 et 6
+    const dayIndex = (weekNum + idx) % 7;
+    const respRestDay = week[dayIndex];
+
+    // Vérifier que ce jour n'est pas en congé
+    if (!(conges[resp] || []).includes(respRestDay.date)) {
+      restAssignments[respRestDay.date] = resp;
+      employeesWithRest.add(resp);
+      console.log(
+        `🔒 ${resp} repose ${respRestDay.dayName} (rotation semaine ${weekNum})`
+      );
+    } else {
+      // Fallback : chercher un autre jour libre (lun → dim)
+      const altDay = week.find(
+        (d) => !(conges[resp] || []).includes(d.date) && !restAssignments[d.date]
+      );
+      if (altDay) {
+        restAssignments[altDay.date] = resp;
+        employeesWithRest.add(resp);
+        console.log(`🔒 ${resp} repose ${altDay.dayName} (fallback)`);
+      }
+    }
+  });
+
+  // 2) Samedi repos (exclut responsables)
   if (saturdayIdx !== -1) {
     const saturdayDate = week[saturdayIdx].date;
     const saturdayAvailable = employeesWithoutConge.filter(
@@ -149,7 +179,7 @@ export function generatePlanning(employees, startDate = new Date(), options = {}
     }
   }
 
-  // 2) Repos forcé pour les responsables (hors samedi/dimanche)
+  // 3) Repos forcé pour les AUTRES responsables (hors samedi/dimanche)
   const weekdays = week.filter((d) => !d.isSaturday && !d.isSunday);
   DYNAMIC_FORCED_G1.forEach((resp) => {
     if (employeesWithRest.has(resp)) return;
@@ -163,9 +193,10 @@ export function generatePlanning(employees, startDate = new Date(), options = {}
     }
   });
 
-  // 3) Autres repos (1 par personne, rotation)
+  // 4) Autres repos (hors dimanche)
   week.forEach((day) => {
     if (restAssignments[day.date]) return;
+    if (day.isSunday) return;
     const availableToday = employees.filter(
       (e) => !(conges[e] || []).includes(day.date)
     );
@@ -294,16 +325,35 @@ export function generatePlanning(employees, startDate = new Date(), options = {}
 
       const dayIdxInWeek = week.findIndex((d) => d.date === day.date);
       const prevDay = dayIdxInWeek > 0 ? week[dayIdxInWeek - 1] : null;
+      const nextDay = dayIdxInWeek < week.length - 1 ? week[dayIdxInWeek + 1] : null;
 
       const scored = others.map((e) => {
         const wasRest = prevDay && planning[e]?.[prevDay.date] === "REST";
+        // 🆕 Veille de repos (demain = repos pour cet employé)
+        const nextRestPerson = nextDay ? restAssignments[nextDay.date] : null;
+        const isRestTomorrow = nextRestPerson === e;
         const target = weekTargets[e];
         const needG1 = target.G1 - stats[e].G1;
         const ratio = stats[e].G1 / Math.max(1, stats[e].G3);
-        return { emp: e, wasRest, needG1, ratio };
+        return { emp: e, wasRest, isRestTomorrow, needG1, ratio };
       });
 
-      // Priorité : lendemain de repos → G3
+      // 🎯 PRIORITÉ 1 : Veille de repos → G1
+      scored.filter((s) => s.isRestTomorrow).forEach((s) => {
+        if (!planning[s.emp][day.date]) {
+          if (g1SlotsLeft > 0) {
+            planning[s.emp][day.date] = "G1";
+            stats[s.emp].G1++;
+            g1SlotsLeft--;
+          } else if (g3SlotsLeft > 0) {
+            planning[s.emp][day.date] = "G3";
+            stats[s.emp].G3++;
+            g3SlotsLeft--;
+          }
+        }
+      });
+
+      // 🎯 PRIORITÉ 2 : Lendemain de repos → G3
       scored.filter((s) => s.wasRest).forEach((s) => {
         if (g3SlotsLeft > 0 && !planning[s.emp][day.date]) {
           planning[s.emp][day.date] = "G3";
@@ -312,12 +362,11 @@ export function generatePlanning(employees, startDate = new Date(), options = {}
         }
       });
 
-      // Trier par RATIO G1/G3 croissant (le plus petit = a besoin de G1)
+      // PRIORITÉ 3 : Équilibre par ratio G1/G3
       const sortedByRatio = scored
-        .filter((s) => !s.wasRest)
+        .filter((s) => !s.wasRest && !s.isRestTomorrow && !planning[s.emp][day.date])
         .sort((a, b) => a.ratio - b.ratio);
 
-      // Remplir G1
       for (const s of sortedByRatio) {
         if (g1SlotsLeft <= 0) break;
         if (planning[s.emp][day.date]) continue;
@@ -326,7 +375,6 @@ export function generatePlanning(employees, startDate = new Date(), options = {}
         g1SlotsLeft--;
       }
 
-      // Remplir G3
       for (const s of sortedByRatio) {
         if (planning[s.emp][day.date]) continue;
         if (g3SlotsLeft > 0) {
@@ -335,6 +383,19 @@ export function generatePlanning(employees, startDate = new Date(), options = {}
           g3SlotsLeft--;
         }
       }
+
+      // PRIORITÉ 4 : Sécurité
+      others.filter((e) => !planning[e][day.date]).forEach((e) => {
+        if (g1SlotsLeft > 0) {
+          planning[e][day.date] = "G1";
+          stats[e].G1++;
+          g1SlotsLeft--;
+        } else if (g3SlotsLeft > 0) {
+          planning[e][day.date] = "G3";
+          stats[e].G3++;
+          g3SlotsLeft--;
+        }
+      });
     }
 
     if (restPerson) {

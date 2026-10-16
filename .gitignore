@@ -1,39 +1,15 @@
-# Dependencies
 node_modules/
-
-# Build
 dist/
 build/
 .vite/
-node_modules/.vite/
-
-# Env
+.wrangler/
 .env
 .env.local
 .env.production
-.env.development
-
-# Logs
 *.log
-npm-debug.log*
-
-# Editor
-.vscode/*
-!.vscode/extensions.json
-.idea/
-*.swp
-
-# OS
 .DS_Store
-Thumbs.db
-
-# Backups
 *.backup
 *.backup_*
-*.backup2
 *.duplicates
 .backup_*/
-
-# Firebase
 .firebase/
-firebase-debug.log
