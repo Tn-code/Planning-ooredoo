@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Layout from "../components/Layout";
 import { loadEmployeesForPlanning } from "../utils/employees";
+import { saveHistory, loadHistory, resetHistory } from "../utils/firestore";
 import { setForcedG1 } from "../utils/scheduler";
 import ExportBar from "../components/ExportBar";
 import { generatePlanning, getWeekDays, SHIFTS, FORCED_G1, extractHistory, getWeekNumber } from "../utils/scheduler";
@@ -25,6 +26,7 @@ export default function AutoPlanning({ user }) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [employees, setEmployees] = useState([]);
   const [loadingEmployees, setLoadingEmployees] = useState(true);
+  const [history, setHistory] = useState({});
   const [newEmp, setNewEmp] = useState("");
   const [planning, setPlanning] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -137,19 +139,24 @@ export default function AutoPlanning({ user }) {
         console.log("⏳ En attente de user.uid...");
         return;
       }
-      console.log("🔄 Chargement employés pour UID:", user.uid);
+      console.log("🔄 Chargement employés + historique pour UID:", user.uid);
       setLoadingEmployees(true);
       try {
-        const result = await loadEmployeesForPlanning(user.uid);
-        console.log("📦 Résultat:", result);
+        const empResult = await loadEmployeesForPlanning(user.uid);
         if (cancelled) return;
-        if (result.success) {
-          setEmployees(result.names || []);
-          setForcedG1(result.responsables || []);
-          console.log("✅ Employés chargés:", result.names.length);
+        if (empResult.success) {
+          setEmployees(empResult.names || []);
+          setForcedG1(empResult.responsables || []);
+          console.log("✅ Employés chargés:", empResult.names.length);
+        }
+
+        const histResult = await loadHistory(user.uid);
+        if (cancelled) return;
+        if (histResult.success) {
+          setHistory(histResult.history || {});
+          console.log("📚 Historique chargé depuis Firestore");
         } else {
-          console.error("❌ Erreur:", result.error);
-          setEmployees([]);
+          setHistory({});
         }
       } catch (err) {
         console.error("❌ Exception:", err);
@@ -162,31 +169,41 @@ export default function AutoPlanning({ user }) {
     return () => { cancelled = true; };
   }, [user?.uid]);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setLoading(true);
-    setTimeout(() => {
-      // 📚 Récupérer l'historique sauvegardé
-      const savedHistory = JSON.parse(
-        localStorage.getItem("planning_history") || "{}"
-      );
+    try {
+      const histResult = await loadHistory(user.uid);
+      const savedHistory = histResult.success ? histResult.history : {};
+      console.log("📚 Historique utilisé:", savedHistory);
+      console.log("🛫 Congés:", conges);
 
-      const result = generatePlanning(employees, startDate, {
-        conges,
-        history: savedHistory,
-      });
+      setTimeout(async () => {
+        const result = generatePlanning(employees, startDate, {
+          conges,
+          history: savedHistory,
+        });
+        setPlanning(result);
 
-      setPlanning(result);
+        const newHistory = extractHistory(result, employees, week);
+        const mergedHistory = { ...savedHistory };
+        Object.keys(newHistory).forEach((emp) => {
+          mergedHistory[emp] = newHistory[emp];
+        });
 
-      // 💾 Sauvegarder l'historique pour la semaine prochaine
-      const newHistory = extractHistory(result, employees, week);
-      const mergedHistory = { ...savedHistory };
-      Object.keys(newHistory).forEach((emp) => {
-        mergedHistory[emp] = newHistory[emp];
-      });
-      localStorage.setItem("planning_history", JSON.stringify(mergedHistory));
+        const saveResult = await saveHistory(user.uid, mergedHistory);
+        if (saveResult.success) {
+          console.log("💾 Historique sauvegardé dans Firestore");
+          setHistory(mergedHistory);
+        } else {
+          console.error("❌ Erreur sauvegarde:", saveResult.error);
+        }
 
+        setLoading(false);
+      }, 600);
+    } catch (err) {
+      console.error("❌ Erreur:", err);
       setLoading(false);
-    }, 600);
+    }
   };
 
   return (
@@ -573,7 +590,7 @@ export default function AutoPlanning({ user }) {
 
       {/* Export Bar */}
       {/* Reset historique */}
-      <button onClick={() => { if (window.confirm('⚠️ Reset historique ?')) { localStorage.removeItem('planning_history'); alert('✅ Historique réinitialisé'); } }} style={{ padding: '12px 18px', borderRadius: 12, border: '1px solid rgba(255,184,0,0.4)', background: 'rgba(255,184,0,0.1)', color: '#FFB800', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', marginTop: 12, marginBottom: 12 }}>🔄 Reset historique</button>
+      <button onClick={async () => { if (window.confirm('⚠️ Reset historique ?')) { const r = await resetHistory(user.uid); if (r.success) { setHistory({}); alert('✅ Historique réinitialisé'); } else { alert('❌ Erreur: ' + r.error); } } }} style={{ padding: '12px 18px', borderRadius: 12, border: '1px solid rgba(255,184,0,0.4)', background: 'rgba(255,184,0,0.1)', color: '#FFB800', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', marginTop: 12, marginBottom: 12 }}>🔄 Reset historique</button>
       <ExportBar user={user} employees={employees} week={week} planning={planning} conges={conges} conges={conges} type="auto" />
 
       {/* Règles */}

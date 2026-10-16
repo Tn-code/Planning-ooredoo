@@ -27,17 +27,37 @@ export const G3_PER_DAY = 2;
 const DAYS_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
 export function getWeekDays(startDate = new Date()) {
+  // 🔑 ISO 8601 : lundi = premier jour de la semaine
   const d = new Date(startDate);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(d.setDate(diff));
-  monday.setHours(0, 0, 0, 0);
+  d.setHours(12, 0, 0, 0);
+
+  // getDay() : 0=Dim, 1=Lun, ..., 6=Sam
+  // Jours écoulés depuis lundi :
+  // - Lun (1) → 0 jours
+  // - Mar (2) → 1 jour
+  // - Mer (3) → 2 jours
+  // - Jeu (4) → 3 jours
+  // - Ven (5) → 4 jours
+  // - Sam (6) → 5 jours
+  // - Dim (0) → 6 jours
+
+  const dayIndex = d.getDay();
+  const daysFromMonday = dayIndex === 0 ? 6 : dayIndex - 1;
+
+  // Reculer de daysFromMonday pour atteindre lundi
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - daysFromMonday);
+  monday.setHours(12, 0, 0, 0);
+
+  console.log("📅 getWeekDays → lundi:", monday.toISOString().split("T")[0]);
 
   return Array.from({ length: 7 }, (_, i) => {
     const date = new Date(monday);
     date.setDate(monday.getDate() + i);
+    date.setHours(12, 0, 0, 0);
+    const dateStr = date.toISOString().split("T")[0];
     return {
-      date: date.toISOString().split("T")[0],
+      date: dateStr,
       dayName: DAYS_FR[date.getDay()],
       dayIndex: date.getDay(),
       isSaturday: date.getDay() === 6,
@@ -45,6 +65,21 @@ export function getWeekDays(startDate = new Date()) {
       dateObj: date,
     };
   });
+}
+
+/**
+ * 🔑 Renvoie la date du LUNDI de la semaine (au format ISO YYYY-MM-DD)
+ * Utile pour normaliser weekStart avant sauvegarde
+ */
+export function getMondayISO(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(12, 0, 0, 0);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString().split("T")[0];
 }
 
 export function getWeekNumber(date) {

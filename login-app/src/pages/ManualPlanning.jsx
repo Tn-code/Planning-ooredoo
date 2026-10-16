@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Layout from "../components/Layout";
+import ExportBar from "../components/ExportBar";
 import { loadEmployeesForPlanning } from "../utils/employees";
 import { setForcedG1 } from "../utils/scheduler";
-import ExportBar from "../components/ExportBar";
 import { getWeekDays, SHIFTS, FORCED_G1 } from "../utils/scheduler";
 import {
   ChevronLeft,
@@ -494,7 +494,17 @@ export default function ManualPlanning({ user }) {
         )}
       </div>
 
-      {/* ═══════════════════════════════════════════ */}
+            {/* 📤 Export Bar */}
+      <ExportBar
+        user={user}
+        employees={employees}
+        week={week}
+        planning={planning}
+        conges={conges}
+        type="manual"
+      />
+
+{/* ═══════════════════════════════════════════ */}
       {/* LÉGENDE                                      */}
       {/* ═══════════════════════════════════════════ */}
       <div

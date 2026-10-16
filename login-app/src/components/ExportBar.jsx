@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FileDown, FileSpreadsheet, Save, CheckCircle2, Loader } from "lucide-react";
 import { exportPDF, exportExcel } from "../utils/exporters";
 import { savePlanning } from "../utils/firestore";
+import { getMondayISO } from "../utils/scheduler";
 
 export default function ExportBar({
   user,
@@ -41,7 +42,8 @@ export default function ExportBar({
     }
 
     setSaving(true);
-    const result = await savePlanning(user.uid, week[0].date, {
+    const mondayISO = getMondayISO(new Date(week[0].date));
+    const result = await savePlanning(user.uid, mondayISO, {
       employees,
       planning,
       conges,

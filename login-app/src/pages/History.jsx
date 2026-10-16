@@ -23,7 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { exportPDF, exportExcel } from "../utils/exporters";
-import { getWeekDays, SHIFTS, FORCED_G1 } from "../utils/scheduler";
+import { getWeekDays, SHIFTS, FORCED_G1, getMondayISO } from "../utils/scheduler";
 
 const OOREDOO = { red: "#ED1C24" };
 
@@ -428,7 +428,8 @@ function PlanningDetail({ planning, onRestore }) {
       };
     });
 
-  const fallbackWeek = getWeekDays(new Date(planning.weekStart));
+  const mondayISO = getMondayISO(new Date(planning.weekStart));
+  const fallbackWeek = getWeekDays(new Date(mondayISO + "T12:00:00"));
   const displayWeek = week.length > 0 ? week : fallbackWeek;
 
   console.log("📅 Planning Detail:", {
