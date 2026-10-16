@@ -1,0 +1,6 @@
+name = "planning-ooredoo"
+compatibility_date = "2026-10-12"
+pages_build_output_dir = "login-app/dist"
+
+[observability]
+enabled = true
