@@ -61,7 +61,7 @@ export default function Sidebar({ open, onClose }) {
           left: 0,
           width: 260,
           height: "100vh",
-          background: "linear-gradient(180deg, #1a1a1f 0%, #0f0f12 100%)",
+          background: "linear-gradient(180deg, #1A1A1F 0%, #0F0F12 100%)",
           borderRight: "1px solid rgba(237,28,36,0.2)",
           padding: "24px 16px",
           display: "flex",
@@ -108,7 +108,7 @@ export default function Sidebar({ open, onClose }) {
             </svg>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Ooredoo</div>
+            <div style={{ color: "#FFFFFF", fontWeight: 800, fontSize: 15 }}>Ooredoo</div>
             <div
               style={{
                 color: OOREDOO.red,
@@ -151,7 +151,7 @@ export default function Sidebar({ open, onClose }) {
                 gap: 12,
                 padding: "12px 14px",
                 borderRadius: 10,
-                color: isActive ? "#fff" : "rgba(255,255,255,0.6)",
+                color: isActive ? "#FFFFFF" : "rgba(255,255,255,0.6)",
                 background: isActive
                   ? `linear-gradient(90deg, ${OOREDOO.red}33, transparent)`
                   : "transparent",

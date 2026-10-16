@@ -7,6 +7,7 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "../firebase";
+import OoredooLogo from "../components/OoredooLogo";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -1034,7 +1035,7 @@ function InputField({
   const borderColor = focused
     ? OOREDOO.red
     : valid === false
-    ? "#ff4444"
+    ? "#FF4D54"
     : valid === true
     ? "#22c55e"
     : theme.divider;
@@ -1136,7 +1137,7 @@ function Badge({ icon, text, theme }) {
 // ============================================
 const darkTheme = {
   card: {
-    background: "rgba(20, 20, 22, 0.78)",
+    background: "linear-gradient(135deg, rgba(25,25,30,0.95) 0%, rgba(15,15,20,0.98) 100%)",
     backdropFilter: "blur(24px)",
     WebkitBackdropFilter: "blur(24px)",
     boxShadow: `0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px ${OOREDOO.red}33 inset`,

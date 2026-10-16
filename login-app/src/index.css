@@ -1,61 +1,67 @@
+/* 🎨 Thème CLAIR Ooredoo (fond blanc comme ooredoo.tn) */
+:root {
+  --ooredoo-red: #ED1C24;
+  --ooredoo-red-dark: #B8141A;
+  --ooredoo-red-light: #FF4D54;
+  --ooredoo-white: #FFFFFF;
+  --ooredoo-gray-bg: #F5F5F7;
+  --ooredoo-gray-text: #1A1A1A;
+  --ooredoo-gray-muted: #666666;
+  --ooredoo-border: #E5E5E7;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 html, body, #root {
   width: 100%;
   min-height: 100vh;
-  background: #0f0f12;
-  color: #fff;
+  background: #F5F5F7;
+  color: #1A1A1A;
   overflow-x: hidden;
 }
 
 /* Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #0f0f12;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(237, 28, 36, 0.4);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(237, 28, 36, 0.7);
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #F5F5F7; }
+::-webkit-scrollbar-thumb { background: #ED1C24; border-radius: 4px; }
 
 /* Selection */
-::selection {
-  background: #ED1C24;
-  color: #fff;
-}
-
-/* Inputs */
-input, select, textarea, button {
-  font-family: inherit;
-}
+::selection { background: #ED1C24; color: #fff; }
 
 /* Focus */
 input:focus, select:focus, textarea:focus {
   outline: none;
+  border-color: #ED1C24 !important;
+  box-shadow: 0 0 0 4px rgba(237, 28, 36, 0.15) !important;
 }
 
-/* Responsive tables */
-@media (max-width: 1024px) {
-  table {
-    font-size: 12px;
-  }
+@keyframes ooredooPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(237, 28, 36, 0.5); }
+  50% { box-shadow: 0 0 40px rgba(237, 28, 36, 0.8); }
 }
 
-@media (max-width: 768px) {
-  body {
-    font-size: 14px;
-  }
+/* 🎨 Placeholders Ooredoo */
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+  opacity: 1 !important;
 }
+
+/* Autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #FFFFFF;
+  -webkit-box-shadow: 0 0 0 1000px rgba(30, 30, 35, 0.9) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: #FFFFFF;
+}
+
+input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, 0.45) !important; }
+input:-webkit-autofill { -webkit-text-fill-color: #FFFFFF; -webkit-box-shadow: 0 0 0 1000px rgba(30,30,35,0.9) inset !important; }
